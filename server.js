@@ -1,23 +1,39 @@
 const express = require("express");
-const cors = require("cors");
-const mongose = require("mongoose");
-
-require("dotenv").config();
-
+const { connectToDb, getDb } = require("./db");
 const app = express();
-const port = process.env.PORT || 5000;
+const cors = require("cors");
 
-app.use(cors);
-app.use(express.json());
+app.use(cors());
+//app.use(express.json());
 
-const uri = process.env.ATLAS_URI;
-mongose.connect(uri, {});
+let db;
 
-const connection = mongose.connection;
-connection.once("open", () => {
-  console.log("MongoDB database connection established successfully");
+connectToDb((err) => {
+  if (!err) {
+    app.listen(5000, () => {
+      console.log("App listening");
+    });
+    db = getDb();
+  }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port: ${port}`);
+app.get("/", (req, res) => {
+  let recipes = [];
+  db.collection("recipes")
+    .find()
+    .sort({ title: 1 })
+    .forEach((recipe) => recipes.push(recipe))
+    .then(() => {
+      res.status(200).json(recipes);
+      console.log("data fetch");
+    })
+    .catch(() => {
+      res.status(500).json({ error: "Could not fetch the documetns" });
+    });
 });
+
+const recipeRouter = require("./routes/recipes");
+const userRouter = require("./routes/users");
+
+app.use("/recipes", recipeRouter);
+app.use("/users", userRouter);
