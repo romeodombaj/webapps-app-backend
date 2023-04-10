@@ -1,5 +1,6 @@
 const express = require("express");
 const { connectToDb, getDb } = require("./db");
+
 const app = express();
 const cors = require("cors");
 
@@ -29,6 +30,21 @@ app.get("/", (req, res) => {
     })
     .catch(() => {
       res.status(500).json({ error: "Could not fetch the documetns" });
+    });
+});
+
+app.post("/new", (req, res) => {
+  const recipe = req.body;
+
+  console.log(recipe);
+
+  db.collection("recipes")
+    .insertOne(recipe)
+    .then((result) => {
+      res.status(201).json(recipe);
+    })
+    .catch((err) => {
+      res.status(500).json({ err: "Could not add new recipe" });
     });
 });
 

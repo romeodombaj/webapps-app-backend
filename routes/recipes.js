@@ -1,16 +1,26 @@
 const express = require("express");
-const db = require("../db");
 const router = express.Router();
+const { getDb } = require("../db");
 
 router.get("/", (req, res) => {
-  res.send("Recipe list");
+  const db = getDb();
+  let recipes = [];
+  db.collection("recipes")
+    .find()
+    .sort({ title: 1 })
+    .forEach((recipe) => recipes.push(recipe))
+    .then(() => {
+      res.status(200).json(recipes);
+      console.log("data fetch");
+    })
+    .catch(() => {
+      res.status(500).json({ error: "Could not fetch the documetns" });
+    });
 });
 
-router.post("/", (req, res) => {
+router.post("/new", (req, res) => {
+  const db = getDb();
   const recipe = req.body;
-
-  console.log(recipe);
-
   db.collection("recipes")
     .insertOne(recipe)
     .then((result) => {
