@@ -2,11 +2,11 @@ const express = require("express");
 const router = express.Router();
 const { getDb } = require("../db");
 
-router.get("/", (req, res) => {
+const getRecipes = (req, res, filter) => {
   const db = getDb();
   let recipes = [];
   db.collection("recipes")
-    .find()
+    .find(filter)
     .sort({ title: 1 })
     .forEach((recipe) => recipes.push(recipe))
     .then(() => {
@@ -16,6 +16,14 @@ router.get("/", (req, res) => {
     .catch(() => {
       res.status(500).json({ error: "Could not fetch the documetns" });
     });
+};
+
+router.get("/", (req, res) => {
+  getRecipes(req, res);
+});
+
+router.get("/:user", (req, res) => {
+  getRecipes(req, res, { user: req.params.user });
 });
 
 router.post("/new", (req, res) => {
