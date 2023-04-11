@@ -14,12 +14,22 @@ const getRecipes = (req, res, filter) => {
       console.log("data fetch");
     })
     .catch(() => {
-      res.status(500).json({ error: "Could not fetch the documetns" });
+      res.status(500).json({ error: "Could not fetch the documents" });
     });
 };
 
 router.get("/", (req, res) => {
   getRecipes(req, res);
+});
+
+router.get("/category-list", (req, res) => {
+  const db = getDb();
+  const categories = db
+    .collection("recipes")
+    .distinct("user")
+    .then((ans) => {
+      res.json(ans);
+    });
 });
 
 router.get("/:user", (req, res) => {
