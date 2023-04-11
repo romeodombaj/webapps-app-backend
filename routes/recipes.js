@@ -26,10 +26,14 @@ router.get("/category-list", (req, res) => {
   const db = getDb();
   const categories = db
     .collection("recipes")
-    .distinct("user")
+    .distinct("category")
     .then((ans) => {
       res.json(ans);
     });
+});
+
+router.get("/category-list/:category_name", (req, res) => {
+  getRecipes(req, res, { category: req.params.category_name });
 });
 
 router.get("/:user", (req, res) => {
