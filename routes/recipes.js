@@ -47,11 +47,28 @@ router.post("/new", (req, res) => {
   db.collection("recipes")
     .insertOne(recipe)
     .then((result) => {
-      res.status(201).json(recipe);
+      res.status(200).json(recipe);
     })
     .catch((err) => {
       res.status(500).json({ err: "Could not add new recipe" });
     });
+});
+
+router.patch("/patch/:id", (req, res) => {
+  const db = getDb();
+  const body = req.body;
+  const recipeId = req.params.id;
+
+  if (ObjectId.isValid(recipeId)) {
+    db.collection("recipes")
+      .updateOne({ _id: new ObjectId(recipeId) }, { $set: body })
+      .then((result) => res.status(200).json(result))
+      .catch((err) => {
+        res.status(500).json({ err: "Could not update recipe" });
+      });
+  } else {
+    res.status(500).json({ error: "Not a valid recipe id" });
+  }
 });
 
 router.delete("/delete/:id", (req, res) => {
@@ -60,8 +77,8 @@ router.delete("/delete/:id", (req, res) => {
 
   if (ObjectId.isValid(recipeId)) {
     db.collection("recipes")
-      .deleteOne({ _id: new ObjectId(req.params.id) })
-      .then((result) => res.status(201).json(result))
+      .deleteOne({ _id: new ObjectId(recipeId) })
+      .then((result) => res.status(200).json(result))
       .catch((err) => {
         res.status(500).json({ err: "Could not delete recipe" });
       });
