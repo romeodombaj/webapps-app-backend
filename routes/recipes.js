@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { getDb } = require("../db");
+const { ObjectId } = require("mongodb");
 
 const getRecipes = (req, res, filter) => {
   const db = getDb();
@@ -51,6 +52,22 @@ router.post("/new", (req, res) => {
     .catch((err) => {
       res.status(500).json({ err: "Could not add new recipe" });
     });
+});
+
+router.delete("/delete/:id", (req, res) => {
+  const db = getDb();
+  const recipeId = req.params.id;
+
+  if (ObjectId.isValid(recipeId)) {
+    db.collection("recipes")
+      .deleteOne({ _id: new ObjectId(req.params.id) })
+      .then((result) => res.status(201).json(result))
+      .catch((err) => {
+        res.status(500).json({ err: "Could not delete recipe" });
+      });
+  } else {
+    res.status(500).json({ error: "Not a valid recipe id" });
+  }
 });
 
 module.exports = router;
