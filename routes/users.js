@@ -53,6 +53,7 @@ router.post("/register", async (req, res) => {
             surname: data.surname,
             age: data.age,
             password: password,
+            saved: [],
           })
           .then(res.json("registered"))
           .catch((err) => {
@@ -70,13 +71,79 @@ router.post("/login", async (req, res) => {
 
   try {
     let result = await authenticateUser(data.username, data.password);
-    console.log(result);
-    console.log("BLUF");
     if (result) {
       res.status(200).json(result);
     }
   } catch (e) {
     res.status(403).json({ error: e.message });
+  }
+});
+
+router.patch("/saveRecipe", async (req, res) => {
+  const db = getDb();
+  let data = req.body;
+  let user;
+
+  if (ObjectId.isValid(data.userId)) {
+    await db
+      .collection(table)
+      .findOne({
+        _id: new ObjectId(data.userId),
+      })
+      .then((result) => {
+        user = result;
+      });
+
+    if (user) {
+      if (user.saved === undefined) {
+        user.saved = [];
+        user.saved.push(data.recipeId);
+      } else {
+        if (!user.saved.includes(data.recipeId)) {
+          user.saved.push(data.recipeId);
+        }
+      }
+
+      db.collection(table)
+        .updateOne({ _id: new ObjectId(user._id) }, { $set: user })
+        .then(res.status(200).json(user.saved))
+        .catch((err) => {
+          res.status(500).json({ err: "Could not update user" });
+        });
+    }
+  }
+});
+
+router.patch("/unsaveRecipe", async (req, res) => {
+  const db = getDb();
+  let data = req.body;
+  let user;
+
+  if (ObjectId.isValid(data.userId)) {
+    await db
+      .collection(table)
+      .findOne({
+        _id: new ObjectId(data.userId),
+      })
+      .then((result) => {
+        user = result;
+      });
+
+    if (user) {
+      if (user.saved !== undefined) {
+        if (user.saved.includes(data.recipeId)) {
+          const index = user.saved.indexOf(data.recipeId);
+          user.saved.splice(index, 1);
+        }
+      }
+
+      db.collection(table)
+        .updateOne({ _id: new ObjectId(user._id) }, { $set: user })
+        .then(res.status(200).json(user.saved))
+        .catch((err) => {
+          res.status(500).json({ err: "Could not update user" });
+        });
+    }
   }
 });
 
