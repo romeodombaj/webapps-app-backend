@@ -1,10 +1,21 @@
 const express = require("express");
 const { connectToDb, getDb } = require("./db");
+const bodyParser = require("body-parser");
 
 const app = express();
 const cors = require("cors");
 
 app.use(cors());
+
+app.use(bodyParser.json({ limit: "10mb" }));
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+    limit: "10mb",
+    parameterLimit: 50000,
+  })
+);
+
 app.use(express.json());
 
 let db;
@@ -32,7 +43,6 @@ app.get("/", (req, res) => {
       res.status(500).json({ error: "Could not fetch the documetns" });
     });
 });
-
 
 app.post("/new", (req, res) => {
   const recipe = req.body;

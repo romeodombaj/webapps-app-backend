@@ -1,9 +1,11 @@
 const express = require("express");
-const { route } = require("./recipes");
 const { getDb } = require("../db");
 const { ObjectId } = require("mongodb");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
+const { authenticateUser } = require("../auth");
+const { verify } = require("../auth");
 
 const table = "users";
 
@@ -35,6 +37,8 @@ router.get("/:id", (req, res) => {
 router.post("/register", async (req, res) => {
   const db = getDb();
   const data = req.body;
+  const salt = bcrypt.genSaltSync(10);
+  const password = await bcrypt.hash(data.password, salt);
 
   db.collection(table)
     .findOne({
@@ -48,15 +52,13 @@ router.post("/register", async (req, res) => {
             name: data.name,
             surname: data.surname,
             age: data.age,
-            password: data.password,
+            password: password,
           })
-          .then(res.status(200).json("User created"))
+          .then(res.json("registered"))
           .catch((err) => {
-            console.log("register-error");
             res.status(500).json({ err: "Register error" });
           });
       } else {
-        console.log("user-error");
         res.status(500).json({ err: "User already exists" });
       }
     });
@@ -66,38 +68,15 @@ router.post("/login", async (req, res) => {
   const db = getDb();
   let data = req.body;
 
-  db.collection(table)
-    .findOne({
-      username: data.username,
-      password: data.password,
-    })
-    .then((result) => {
-      if (result) {
-        console.log(result);
-        res.status(200).json(result);
-      } else {
-        res.status(500).json("User does not exist");
-      }
-    })
-    .catch((err) => {
-      res.status(500).json({ err: "Could not login" });
-    });
-});
-
-router.patch("/addRecipe/:id", (req, res) => {
-  const db = getDb();
-  const id = req.params.id;
-  const body = req.body;
-
-  if (ObjectId.isValid(recipeId)) {
-    db.collection(table)
-      .updateOne({ _id: new ObjectId(id) }, { $set: body })
-      .then((result) => res.status(200).json(result))
-      .catch((err) => {
-        res.status(500).json({ err: "Could not update recipe" });
-      });
-  } else {
-    res.status(500).json({ error: "Not a valid recipe id" });
+  try {
+    let result = await authenticateUser(data.username, data.password);
+    console.log(result);
+    console.log("BLUF");
+    if (result) {
+      res.status(200).json(result);
+    }
+  } catch (e) {
+    res.status(403).json({ error: e.message });
   }
 });
 
